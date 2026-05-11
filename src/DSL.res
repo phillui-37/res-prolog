@@ -26,6 +26,14 @@ let solveAll = Solver.solveAll
 let solveN = Solver.solveN
 let query = Solver.query
 
+/* Prolog-style `?-` query operator: takes a conjunction of goals as a
+   list and returns a lazy stream of substitutions. See `Solver.res` for
+   details. Companion helpers `queryAnd` and `holds` cover the common
+   "what variable values?" and "does it hold?" use cases. */
+let \"?-" = Solver.\"?-"
+let queryAnd = Solver.queryAnd
+let holds = Solver.holds
+
 let unify = Unification.unify
 let valueOf = Unification.valueOf
 let resolve = Unification.resolve

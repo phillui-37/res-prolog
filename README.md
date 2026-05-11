@@ -26,7 +26,7 @@ strings to be parsed or concatenated. Typos become compile-time errors.
 | Unification       | Robinson's algorithm with occurs check                         |
 | Knowledge base    | A `database` is just a `list<clause>`                          |
 | Backtracking      | Lazy `Stream.t<substitution>` — SLD resolution                 |
-| Solver controls   | `solve`, `solveN`, `solveAll`, `query`                         |
+| Solver controls   | `solve`, `solveN`, `solveAll`, `query`, `?-`, `queryAnd`, `holds` |
 
 ## Project layout
 
@@ -134,7 +134,55 @@ solve:    (database, term) => Stream.t<substitution>   // lazy
 solveN:   (database, term, int) => list<substitution>
 solveAll: (database, term) => list<substitution>
 query:    (database, term, 'v) => list<term>           // values of 'v
+
+// Prolog-style `?-` query operator (conjunction of goals)
+\"?-":     (database, list<term>) => Stream.t<substitution>
+queryAnd: (database, list<term>, 'v) => list<term>     // values of 'v across the conjunction
+holds:    (database, list<term>) => bool               // does the conjunction succeed?
 ```
+
+## The `?-` query operator
+
+Prolog's top-level uses `?-` to introduce a query — a conjunction of
+goals separated by commas. `res-prolog` mirrors this with an explicit
+`\"?-"` function (and two convenience helpers) so the same three
+patterns from Prolog map directly:
+
+```prolog
+?- a(X), b(X).      % find X such that both a(X) and b(X) hold
+?- a(test, X).      % for relation a, what X does `test` relate to?
+?- a(b).            % is b in relation a? (boolean check)
+```
+
+In ReScript the conjunction is just a `list` of goals:
+
+```rescript
+open DSL
+
+// Pattern 1: find X satisfying both `likes(X)` and `tall(X)`.
+let xs = queryAnd(
+  db,
+  list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})},
+  #X,
+)
+
+// Pattern 2: what X does `tom` relate to via `parent`?
+let children = queryAnd(
+  db,
+  list{compound(#parent, list{atom(#tom), var(#X)})},
+  #X,
+)
+
+// Pattern 3: does food(burger) hold?
+let yes = holds(db, list{compound(#food, list{atom(#burger)})})
+
+// Or use the raw `?-` operator to get the lazy stream of substitutions
+// (useful when you need to inspect more than one variable at a time):
+let stream = \"?-"(db, list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})})
+```
+
+The single-goal `query` / `solve` API is unchanged; `\"?-"` is the
+generalisation to a conjunction of goals.
 
 ## Build / test / run
 

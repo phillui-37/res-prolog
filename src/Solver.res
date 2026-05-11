@@ -98,3 +98,43 @@ let solveAll = (db, goal) => Stream.toList(solve(db, goal))
 let query = (db: database<'n, 'v>, goal: term<'n, 'v>, v: 'v): list<term<'n, 'v>> =>
   solveAll(db, goal)
   ->List.filterMap(s => Unification.valueOf(s, v))
+
+/* --- Prolog-style `?-` query operator ---
+
+   Mirrors Prolog's top-level query syntax, where a query is a conjunction
+   of goals separated by commas:
+
+       ?- a(X), b(X).      // find X such that both a(X) and b(X) hold
+       ?- a(test, X).      // for relation a, what X does `test` relate to?
+       ?- a(b).            // does a(b) hold?
+
+   In ReScript the conjunction is expressed as a `list<term<...>>`.
+   `\"?-"` returns the lazy stream of substitutions, exactly like `solve`,
+   but generalised over a goal list.
+
+   Companion helpers:
+     - `queryAnd` projects the value of one user variable across the
+       conjunction (handles patterns 1 and 2);
+     - `holds` answers the boolean question (pattern 3). */
+let \"?-" = (
+  db: database<'n, 'v>,
+  goals: list<term<'n, 'v>>,
+): Stream.t<substitution<'n, 'v>> => {
+  let counter = ref(0)
+  let steps = ref(0)
+  solveGoals(db, counter, steps, goals, empty)
+}
+
+let queryAnd = (
+  db: database<'n, 'v>,
+  goals: list<term<'n, 'v>>,
+  v: 'v,
+): list<term<'n, 'v>> =>
+  Stream.toList(\"?-"(db, goals))
+  ->List.filterMap(s => Unification.valueOf(s, v))
+
+let holds = (db: database<'n, 'v>, goals: list<term<'n, 'v>>): bool =>
+  switch \"?-"(db, goals)() {
+  | Stream.Nil => false
+  | Stream.Cons(_, _) => true
+  }
