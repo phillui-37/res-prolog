@@ -98,6 +98,20 @@ check(
   | Some(_) => false
   },
 )
+check(
+  "float = float succeeds when equal",
+  switch unify(list{}, float_(1.5), float_(1.5)) {
+  | Some(_) => true
+  | None => false
+  },
+)
+check(
+  "float = float fails when different",
+  switch unify(list{}, float_(1.5), float_(2.5)) {
+  | None => true
+  | Some(_) => false
+  },
+)
 
 /* Transitive resolution: X = Y, Y = a ⇒ X resolves to a */
 check(
@@ -129,6 +143,20 @@ checkEq("query parents of ann", parentsOfAnn, list{atom(#bob)})
 /* No solutions */
 let none_ = query(parents, compound(#parent, list{atom(#nobody), var(#C)}), #C)
 checkEq("query with no solutions returns empty", none_, list{})
+
+/* Simple true/false checks: like ?- food(burger). */
+let foodDb = list{
+  fact(compound(#food, list{atom(#burger)})),
+  fact(compound(#food, list{atom(#salad)})),
+}
+check(
+  "food(burger) is true",
+  List.length(solveAll(foodDb, compound(#food, list{atom(#burger)}))) == 1,
+)
+check(
+  "food(pizza) is false",
+  List.length(solveAll(foodDb, compound(#food, list{atom(#pizza)}))) == 0,
+)
 
 /* ---------- Solver: rules + recursion ---------- */
 
