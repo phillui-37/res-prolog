@@ -186,6 +186,7 @@ let graphDb = list{
 }
 
 let reachableFromA = query(graphDb, compound(#path, list{atom(#a), var(#Y)}), #Y)
+/* Duplicate #d is intentional: two proof paths (direct edge and via b->c->d). */
 checkEq(
   "complex recursive path query from a",
   reachableFromA,

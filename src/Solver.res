@@ -17,6 +17,7 @@ open Unification
 
 exception StackOverflowGuardExceeded(int)
 
+/* Keep this conservative so the guard triggers before JS engine stack overflow. */
 let stackOverflowGuardLimit = 1000
 
 /* --- Renaming --- */
