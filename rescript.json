@@ -1,0 +1,28 @@
+{
+  "name": "res-prolog",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "tests",
+      "type": "dev"
+    },
+    {
+      "dir": "examples",
+      "type": "dev"
+    }
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": false
+    }
+  ],
+  "suffix": ".res.mjs",
+  "dependencies": [],
+  "warnings": {
+    "error": "+101"
+  }
+}
