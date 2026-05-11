@@ -12,7 +12,8 @@
     "dev": "pnpm res:build && vite",
     "preview": "vite preview",
     "test": "pnpm res:build && node lib/es6/tests/Tests.res.mjs",
-    "example": "pnpm res:build && node lib/es6/examples/Family.res.mjs"
+    "example": "pnpm res:build && node lib/es6/examples/Family.res.mjs",
+    "benchmark": "pnpm res:build && node lib/es6/benchmarks/Benchmark.res.mjs"
   },
   "keywords": [
     "rescript",

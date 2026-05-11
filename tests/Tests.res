@@ -165,6 +165,33 @@ checkEq(
   list{atom(#bob), atom(#liz), atom(#ann), atom(#zoe)},
 )
 
+/* ---------- Solver: complex recursive case ---------- */
+
+let graphDb = list{
+  fact(compound(#edge, list{atom(#a), atom(#b)})),
+  fact(compound(#edge, list{atom(#a), atom(#d)})),
+  fact(compound(#edge, list{atom(#b), atom(#c)})),
+  fact(compound(#edge, list{atom(#c), atom(#d)})),
+  rule(
+    compound(#path, list{var(#X), var(#Y)}),
+    list{compound(#edge, list{var(#X), var(#Y)})},
+  ),
+  rule(
+    compound(#path, list{var(#X), var(#Y)}),
+    list{
+      compound(#edge, list{var(#X), var(#Z)}),
+      compound(#path, list{var(#Z), var(#Y)}),
+    },
+  ),
+}
+
+let reachableFromA = query(graphDb, compound(#path, list{atom(#a), var(#Y)}), #Y)
+checkEq(
+  "complex recursive path query from a",
+  reachableFromA,
+  list{atom(#b), atom(#d), atom(#c), atom(#d)},
+)
+
 /* ---------- Stream laziness: solveN ---------- */
 
 /* Build a database of nat/1 facts so we can ensure solveN doesn't enumerate all. */
@@ -190,6 +217,26 @@ check(
   "eq(a, b) fails",
   List.length(solveAll(eqDb, compound(#eq, list{atom(#a), atom(#b)}))) == 0,
 )
+
+/* ---------- Stack overflow guard ---------- */
+
+let loopDb = list{
+  rule(
+    compound(#loop, list{var(#X)}),
+    list{compound(#loop, list{var(#X)})},
+  ),
+}
+
+let guardTriggered =
+  try {
+    ignore(solveN(loopDb, compound(#loop, list{atom(#a)}), 1))
+    false
+  } catch {
+  | Solver.StackOverflowGuardExceeded(_) => true
+  | _ => false
+  }
+
+check("stack overflow guard triggers on deep recursion", guardTriggered)
 
 /* ---------- Summary ---------- */
 
