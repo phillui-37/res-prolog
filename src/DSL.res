@@ -26,11 +26,12 @@ let solveAll = Solver.solveAll
 let solveN = Solver.solveN
 let query = Solver.query
 
-/* Prolog-style `?-` query operator: takes a conjunction of goals as a
-   list and returns a lazy stream of substitutions. See `Solver.res` for
-   details. Companion helpers `queryAnd` and `holds` cover the common
-   "what variable values?" and "does it hold?" use cases. */
-let \"?-" = Solver.\"?-"
+/* Generic conjunction-query helpers: take a `list` of goals (the
+   conjunction) instead of a single goal. See `Solver.res` for details.
+     - `solveAnd` — lazy stream of substitutions
+     - `queryAnd` — values of one user variable across the conjunction
+     - `holds`    — boolean: does the conjunction succeed at least once? */
+let solveAnd = Solver.solveAnd
 let queryAnd = Solver.queryAnd
 let holds = Solver.holds
 

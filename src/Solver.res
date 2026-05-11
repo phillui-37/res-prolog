@@ -99,24 +99,26 @@ let query = (db: database<'n, 'v>, goal: term<'n, 'v>, v: 'v): list<term<'n, 'v>
   solveAll(db, goal)
   ->List.filterMap(s => Unification.valueOf(s, v))
 
-/* --- Prolog-style `?-` query operator ---
+/* --- Generic conjunction-query helpers ---
 
-   Mirrors Prolog's top-level query syntax, where a query is a conjunction
-   of goals separated by commas:
+   Mirrors Prolog's top-level query semantics, where a query is a
+   conjunction of goals separated by commas. The three classic patterns
+   all map onto a single primitive — a list of goals:
 
-       ?- a(X), b(X).      // find X such that both a(X) and b(X) hold
-       ?- a(test, X).      // for relation a, what X does `test` relate to?
-       ?- a(b).            // does a(b) hold?
+       a(X), b(X).      // find X such that both a(X) and b(X) hold
+       a(test, X).      // for relation a, what X does `test` relate to?
+       a(b).            // does a(b) hold?
 
    In ReScript the conjunction is expressed as a `list<term<...>>`.
-   `\"?-"` returns the lazy stream of substitutions, exactly like `solve`,
-   but generalised over a goal list.
+   No special syntax / operator is introduced — these are just plain
+   functions:
 
-   Companion helpers:
-     - `queryAnd` projects the value of one user variable across the
-       conjunction (handles patterns 1 and 2);
-     - `holds` answers the boolean question (pattern 3). */
-let \"?-" = (
+     - `solveAnd`  — lazy stream of substitutions for a goal conjunction
+                     (the conjunctive analogue of `solve`);
+     - `queryAnd`  — projects the value of one user variable across the
+                     conjunction (handles patterns 1 and 2);
+     - `holds`     — answers the boolean question (pattern 3). */
+let solveAnd = (
   db: database<'n, 'v>,
   goals: list<term<'n, 'v>>,
 ): Stream.t<substitution<'n, 'v>> => {
@@ -130,11 +132,11 @@ let queryAnd = (
   goals: list<term<'n, 'v>>,
   v: 'v,
 ): list<term<'n, 'v>> =>
-  Stream.toList(\"?-"(db, goals))
+  Stream.toList(solveAnd(db, goals))
   ->List.filterMap(s => Unification.valueOf(s, v))
 
 let holds = (db: database<'n, 'v>, goals: list<term<'n, 'v>>): bool =>
-  switch \"?-"(db, goals)() {
+  switch solveAnd(db, goals)() {
   | Stream.Nil => false
   | Stream.Cons(_, _) => true
   }
