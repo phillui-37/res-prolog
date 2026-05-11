@@ -267,6 +267,67 @@ let guardTriggered =
 
 check("stack overflow guard triggers on deep recursion", guardTriggered)
 
+/* ---------- Generic conjunction-query helpers ----------
+
+   Covers the three Prolog-style query patterns (without introducing
+   any special syntax — just plain functions over a goal list):
+     a(X), b(X).      // find X satisfying both
+     a(test, X).      // find X for the relation
+     a(b).            // boolean check
+*/
+
+/* Pattern 1: likes(X), tall(X). — find X that satisfies both. */
+let peopleDb = list{
+  fact(compound(#likes, list{atom(#alice)})),
+  fact(compound(#likes, list{atom(#bob)})),
+  fact(compound(#likes, list{atom(#carol)})),
+  fact(compound(#tall, list{atom(#bob)})),
+  fact(compound(#tall, list{atom(#carol)})),
+  fact(compound(#tall, list{atom(#dave)})),
+}
+
+let likedAndTall = queryAnd(
+  peopleDb,
+  list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})},
+  #X,
+)
+checkEq(
+  "queryAnd: likes(X), tall(X). finds X satisfying both",
+  likedAndTall,
+  list{atom(#bob), atom(#carol)},
+)
+
+/* Same conjunction directly via `solveAnd` + Stream consumption. */
+check(
+  "solveAnd returns a stream for a conjunction",
+  List.length(Stream.toList(solveAnd(
+    peopleDb,
+    list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})},
+  ))) == 2,
+)
+
+/* Pattern 2: parent(tom, X). — what X does `tom` relate to? */
+let xsOfTom = queryAnd(
+  parents,
+  list{compound(#parent, list{atom(#tom), var(#X)})},
+  #X,
+)
+checkEq(
+  "queryAnd: parent(tom, X). projects X",
+  xsOfTom,
+  list{atom(#bob), atom(#liz)},
+)
+
+/* Pattern 3: food(burger). — boolean check. */
+check("holds: food(burger).", holds(foodDb, list{compound(#food, list{atom(#burger)})}))
+check(
+  "holds: food(pizza). is false",
+  !holds(foodDb, list{compound(#food, list{atom(#pizza)})}),
+)
+
+/* Empty conjunction trivially holds (the empty goal list always succeeds). */
+check("holds: empty conjunction trivially holds", holds(foodDb, list{}))
+
 /* ---------- Summary ---------- */
 
 Console.log("")

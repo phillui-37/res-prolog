@@ -26,7 +26,7 @@ strings to be parsed or concatenated. Typos become compile-time errors.
 | Unification       | Robinson's algorithm with occurs check                         |
 | Knowledge base    | A `database` is just a `list<clause>`                          |
 | Backtracking      | Lazy `Stream.t<substitution>` — SLD resolution                 |
-| Solver controls   | `solve`, `solveN`, `solveAll`, `query`                         |
+| Solver controls   | `solve`, `solveN`, `solveAll`, `query`, `solveAnd`, `queryAnd`, `holds` |
 
 ## Project layout
 
@@ -134,7 +134,59 @@ solve:    (database, term) => Stream.t<substitution>   // lazy
 solveN:   (database, term, int) => list<substitution>
 solveAll: (database, term) => list<substitution>
 query:    (database, term, 'v) => list<term>           // values of 'v
+
+// Conjunction queries — take a `list` of goals (the comma-separated
+// conjunction in Prolog notation). No special syntax, just functions.
+solveAnd: (database, list<term>) => Stream.t<substitution>
+queryAnd: (database, list<term>, 'v) => list<term>     // values of 'v across the conjunction
+holds:    (database, list<term>) => bool               // does the conjunction succeed?
 ```
+
+## Generic / conjunction queries
+
+Prolog's top-level uses `?-` to introduce a query — a conjunction of
+goals separated by commas. `res-prolog` exposes the same capability
+without introducing any special syntax: a query is just a `list` of
+goals passed to a plain function. The three classic patterns map
+directly:
+
+```prolog
+% Prolog                         % res-prolog (ReScript)
+a(X), b(X).                      queryAnd(db, list{a(X), b(X)}, #X)
+a(test, X).                      queryAnd(db, list{a(test, X)}, #X)
+a(b).                            holds(db, list{a(b)})
+```
+
+```rescript
+open DSL
+
+// Pattern 1: find X satisfying both `likes(X)` and `tall(X)`.
+let xs = queryAnd(
+  db,
+  list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})},
+  #X,
+)
+
+// Pattern 2: what X does `tom` relate to via `parent`?
+let children = queryAnd(
+  db,
+  list{compound(#parent, list{atom(#tom), var(#X)})},
+  #X,
+)
+
+// Pattern 3: does food(burger) hold?
+let yes = holds(db, list{compound(#food, list{atom(#burger)})})
+
+// Or use `solveAnd` to get the lazy stream of substitutions
+// (useful when you need to inspect more than one variable at a time):
+let stream = solveAnd(
+  db,
+  list{compound(#likes, list{var(#X)}), compound(#tall, list{var(#X)})},
+)
+```
+
+The single-goal `query` / `solve` API is unchanged; `solveAnd` /
+`queryAnd` / `holds` are the generalisation to a conjunction of goals.
 
 ## Build / test / run
 

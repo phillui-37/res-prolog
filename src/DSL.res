@@ -26,6 +26,15 @@ let solveAll = Solver.solveAll
 let solveN = Solver.solveN
 let query = Solver.query
 
+/* Generic conjunction-query helpers: take a `list` of goals (the
+   conjunction) instead of a single goal. See `Solver.res` for details.
+     - `solveAnd` — lazy stream of substitutions
+     - `queryAnd` — values of one user variable across the conjunction
+     - `holds`    — boolean: does the conjunction succeed at least once? */
+let solveAnd = Solver.solveAnd
+let queryAnd = Solver.queryAnd
+let holds = Solver.holds
+
 let unify = Unification.unify
 let valueOf = Unification.valueOf
 let resolve = Unification.resolve
