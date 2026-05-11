@@ -17,7 +17,7 @@ open Unification
 
 exception StackOverflowGuardExceeded(int)
 
-let stackOverflowGuardLimit = 20000
+let stackOverflowGuardLimit = 1000
 
 /* --- Renaming --- */
 
@@ -72,7 +72,7 @@ let rec solveGoals = (
     let tryClause = (clause: clause<'n, 'v>): Stream.t<substitution<'n, 'v>> => {
       steps := steps.contents + 1
       if steps.contents > stackOverflowGuardLimit {
-        raise(StackOverflowGuardExceeded(steps.contents))
+        throw(StackOverflowGuardExceeded(steps.contents))
       }
       let renamed = renameClause(counter, clause)
       switch unify(s, goal, renamed.head) {
