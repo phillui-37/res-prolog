@@ -39,6 +39,8 @@ src/
   DSL.res           ← thin re-export module for ergonomic `open`
 tests/
   Tests.res         ← unit tests (run with `pnpm test`)
+benchmarks/
+  Benchmark.res     ← micro-benchmarks (run with `pnpm benchmark`)
 examples/
   Family.res        ← parent / ancestor demo
 web/
@@ -140,8 +142,16 @@ query:    (database, term, 'v) => list<term>           // values of 'v
 pnpm install         # installs ReScript 12, Vite, runtime
 pnpm res:build       # compile .res → lib/es6/**/*.res.mjs
 pnpm test            # build + run unit tests under Node
+pnpm benchmark       # build + run benchmark cases under Node
 pnpm example         # build + run the family / ancestor demo
 pnpm dev             # build + start Vite dev server (in-browser demo)
 pnpm build           # build + Vite production bundle into dist/
 ```
 
+## Benchmark cases
+
+The benchmark entrypoint currently includes:
+
+* a complex recursive `path/2` query workload;
+* a deep self-recursive `loop/1` workload that exercises the solver's
+  stack-overflow guard.

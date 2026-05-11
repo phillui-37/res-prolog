@@ -15,6 +15,11 @@
 open Term
 open Unification
 
+exception StackOverflowGuardExceeded(int)
+
+/* Keep this conservative so the guard triggers before JS engine stack overflow. */
+let stackOverflowGuardLimit = 1000
+
 /* --- Renaming --- */
 
 let renameTerm = (mapping: list<(varId<'v>, varId<'v>)>, t: term<'n, 'v>): term<'n, 'v> => {
@@ -57,6 +62,7 @@ let renameClause = (counter: ref<int>, c: clause<'n, 'v>): clause<'n, 'v> => {
 let rec solveGoals = (
   db: database<'n, 'v>,
   counter: ref<int>,
+  steps: ref<int>,
   goals: list<term<'n, 'v>>,
   s: substitution<'n, 'v>,
 ): Stream.t<substitution<'n, 'v>> =>
@@ -65,11 +71,15 @@ let rec solveGoals = (
   | list{g, ...rest} =>
     let goal = walk(s, g)
     let tryClause = (clause: clause<'n, 'v>): Stream.t<substitution<'n, 'v>> => {
+      steps := steps.contents + 1
+      if steps.contents > stackOverflowGuardLimit {
+        throw(StackOverflowGuardExceeded(steps.contents))
+      }
       let renamed = renameClause(counter, clause)
       switch unify(s, goal, renamed.head) {
       | None => Stream.nil
       | Some(s') =>
-        () => solveGoals(db, counter, List.concat(renamed.body, rest), s')()
+        () => solveGoals(db, counter, steps, List.concat(renamed.body, rest), s')()
       }
     }
     Stream.flatMap(Stream.ofList(db), tryClause)
@@ -77,7 +87,8 @@ let rec solveGoals = (
 
 let solve = (db: database<'n, 'v>, goal: term<'n, 'v>): Stream.t<substitution<'n, 'v>> => {
   let counter = ref(0)
-  solveGoals(db, counter, list{goal}, empty)
+  let steps = ref(0)
+  solveGoals(db, counter, steps, list{goal}, empty)
 }
 
 let solveN = (db, goal, n) => Stream.take(solve(db, goal), n)
